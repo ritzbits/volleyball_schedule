@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Open Gym Schedule</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label, input {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #schedule {
+            margin-top: 20px;
+        }
+        .highlight {
+            background-color: lightgreen;
+            border: 2px solid green;
+            padding: 5px;
+        }
+        .highlight-break {
+            background-color: orange;
+            border: 2px solid darkorange;
+            padding: 5px;
+        }
+        .status-bar {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            color: white;
+        }
+        .time {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+        }
+        .schedule {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Volleyball Open Gym Schedule</h1>
+
+    <form id="scheduleForm">
+        <label for="openGymStart">Open Gym Start Time (HH:MM):</label>
+        <input type="time" id="openGymStart" name="openGymStart" value="18:50" required>
+
+        <label for="numGames">Number of Games:</label>
+        <input type="number" id="numGames" name="numGames" value="7" required>
+
+        <label for="gameDuration">Time per Game (minutes):</label>
+        <input type="number" id="gameDuration" name="gameDuration" value="20" required>
+
+        <label for="breakTime">Break Time Between Games (minutes):</label>
+        <input type="number" id="breakTime" name="breakTime" value="3" required>
+
+        <label>
+            <input type="checkbox" id="useCurrentTime"> Use current computer time
+        </label>
+
+        <button type="button" onclick="generateSchedule()">Generate Schedule</button>
+    </form>
+
+    <script>
+        const STATUSES = {
+            WARMUP: { text: 'WARM-UP', backgroundColor: 'green' },
+            PLAYING: { text: 'PLAYING', backgroundColor: 'blue' },
+            BREAK_LAST_SERVE: { text: 'BREAK (LAST SERVE)', backgroundColor: 'red' },
+            BREAK: { text: 'BREAK', backgroundColor: 'orange' },
+            CLEANUP: { text: 'CLEAN-UP', backgroundColor: 'green' }
+        };
+
+        function formatTime(date) {
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const seconds = date.getSeconds();
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function formatTimeWithoutSeconds(date) {
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            return `${hours}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        function updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame) {
+            const statusBar = statusWindow.document.getElementById('statusBar');
+            statusBar.innerText = `${statusType.text}\n${remainingTime}`;
+            statusBar.style.backgroundColor = statusType.backgroundColor;
+
+            const gameScheduleDiv = statusWindow.document.getElementById('gameSchedule');
+            for (let gameRow of gameScheduleDiv.rows) {
+                gameRow.classList.remove('highlight', 'highlight-break');
+            }
+            if (highlightGame) {
+                const highlightRow = statusWindow.document.getElementById(highlightGame);
+                if (highlightRow) {
+                    if (statusType === STATUSES.BREAK || statusType === STATUSES.BREAK_LAST_SERVE) {
+                        highlightRow.classList.add('highlight-break');
+                    } else {
+                        highlightRow.classList.add('highlight');
+                    }
+                }
+            }
+        }
+
+        function openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime) {
+            const statusWindow = window.open("", "StatusWindow", "width=400,height=800");
+
+            statusWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Game Status</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            height: 100vh;
+                            margin: 0;
+                        }
+                        .status-bar {
+                            width: 100%;
+                            text-align: center;
+                            padding: 20px;
+                            font-size: 24px;
+                            color: white;
+                        }
+                        .time {
+                            position: absolute;
+                            top: 20px;
+                            right: 20px;
+                            font-size: 18px;
+                        }
+                        .schedule {
+                            margin-top: 20px;
+                            font-size: 20px;
+                        }
+                        .highlight {
+                            background-color: lightgreen;
+                            border: 2px solid green;
+                            padding: 5px;
+                        }
+                        .highlight-break {
+                            background-color: orange;
+                            border: 2px solid darkorange;
+                            padding: 5px;
+                        }
+                        .flashing {
+                            animation: flash 1s infinite;
+                        }
+                        @keyframes flash {
+                            0%, 100% { background-color: white; }
+                            50% { background-color: red; }
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #f2f2f2;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="time" id="currentTime"></div>
+                    <div class="status-bar" id="statusBar"></div>
+                    <div class="schedule">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Game</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gameSchedule"></tbody>
+                        </table>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            const gameScheduleTbody = statusWindow.document.getElementById('gameSchedule');
+
+            // Display WARM-UP
+            const warmupRow = document.createElement('tr');
+            warmupRow.id = 'warmup';
+            warmupRow.innerHTML = `<td>WARM-UP</td><td></td>`;
+            gameScheduleTbody.appendChild(warmupRow);
+
+            // Display Games
+            schedule.forEach((game, index) => {
+                const gameRow = document.createElement('tr');
+                gameRow.id = `game-${index + 1}`;
+                gameRow.innerHTML = `<td>Game ${index + 1}</td><td>${formatTimeWithoutSeconds(game.start)} - ${formatTimeWithoutSeconds(game.end)}</td>`;
+                gameScheduleTbody.appendChild(gameRow);
+            });
+
+            const updateStatus = () => {
+                const now = new Date();
+                statusWindow.document.getElementById('currentTime').innerText = formatTime(now);
+
+                let statusType = '';
+                let remainingTime = '';
+                let highlightGame = '';
+
+                for (let i = 0; i < schedule.length; i++) {
+                    const { start, end } = schedule[i];
+                    const lastServeEnd = new Date(end.getTime() + 30 * 1000);
+
+                    if (now >= start && now <= end) {
+                        statusType = { text: `GAME ${i + 1} - ${STATUSES.PLAYING.text}`, backgroundColor: STATUSES.PLAYING.backgroundColor };
+                        remainingTime = `Time remaining: ${formatDuration(Math.floor((end - now) / 1000))}`;
+                        highlightGame = `game-${i + 1}`;
+                        break;
+                    } else if (now < start) {
+                        if (i === 0 || now >= schedule[i - 1].end) {
+                            statusType = STATUSES.WARMUP;
+                            remainingTime = `Time remaining: ${formatDuration(Math.floor((start - now) / 1000))}`;
+                            highlightGame = 'warmup';
+                        }
+                        break;
+                    } else if (now > end && i < schedule.length - 1 && now < schedule[i + 1].start) {
+                        if (now <= lastServeEnd) {
+                            statusType = STATUSES.BREAK_LAST_SERVE;
+                        } else {
+                            statusType = STATUSES.BREAK;
+                        }
+                        remainingTime = `Game ${i + 2} starts in: ${formatDuration(Math.floor((schedule[i + 1].start - now) / 1000))}`;
+                        highlightGame = `game-${i + 2}`;
+                        break;
+                    }
+                }
+
+                if (now > schedule[schedule.length - 1].end) {
+                    statusType = STATUSES.CLEANUP;
+                    remainingTime = 'Thanks for playing!';
+                }
+
+                updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame);
+            };
+
+            statusWindow.setInterval(updateStatus, 1000);
+        }
+
+        function generateSchedule() {
+            const openGymStart = document.getElementById('openGymStart').value;
+            const numGames = parseInt(document.getElementById('numGames').value);
+            const gameDuration = parseInt(document.getElementById('gameDuration').value);
+            const breakTime = parseInt(document.getElementById('breakTime').value);
+            const useCurrentTime = document.getElementById('useCurrentTime').checked;
+
+            let currentTime = new Date();
+
+            if (!useCurrentTime) {
+                const [hours, minutes] = openGymStart.split(':');
+                currentTime.setHours(parseInt(hours));
+                currentTime.setMinutes(parseInt(minutes));
+                currentTime.setSeconds(0);
+            }
+
+            const schedule = [];
+
+            // Regular Games
+            for (let i = 0; i < numGames; i++) {
+                const gameStart = new Date(currentTime);
+                const gameEnd = new Date(gameStart.getTime() + gameDuration * 60000);
+                schedule.push({ start: gameStart, end: gameEnd });
+
+                currentTime = new Date(gameEnd.getTime() + breakTime * 60000);
+            }
+
+            openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime);
+        }
+
+    </script>
+
+</body>
+</html>
