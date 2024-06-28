@@ -116,7 +116,7 @@
         <input type="number" id="breakTime" name="breakTime" value="3" required>
 
         <label>
-            <input type="checkbox" id="useCurrentTime"> Use current computer time
+            <input type="checkbox" id="removeStatusBar"> Remove Status Bar
         </label>
 
         <button type="button" onclick="generateSchedule()">Generate Schedule</button>
@@ -144,9 +144,10 @@
         function formatTimeWithoutSeconds(date) {
             let hours = date.getHours();
             const minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
             hours = hours ? hours : 12; // the hour '0' should be '12'
-            return `${hours}:${String(minutes).padStart(2, '0')}`;
+            return `${hours}:${String(minutes).padStart(2, '0')} ${ampm}`;
         }
 
         function formatDuration(seconds) {
@@ -157,8 +158,10 @@
 
         function updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame) {
             const statusBar = statusWindow.document.getElementById('statusBar');
-            statusBar.innerText = `${statusType.text}\n${remainingTime}`;
-            statusBar.style.backgroundColor = statusType.backgroundColor;
+            if (statusBar) {
+                statusBar.innerText = `${statusType.text}\n${remainingTime}`;
+                statusBar.style.backgroundColor = statusType.backgroundColor;
+            }
 
             const gameScheduleDiv = statusWindow.document.getElementById('gameSchedule');
             for (let gameRow of gameScheduleDiv.rows) {
@@ -176,7 +179,7 @@
             }
         }
 
-        function openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime) {
+        function openStatusWindow(schedule, gameDuration, breakTime, removeStatusBar) {
             let statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
             if (!statusWindow || statusWindow.closed) {
                 statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
@@ -293,8 +296,7 @@
                     </style>
                 </head>
                 <body>
-                    <div class="time" id="currentTime"></div>
-                    <div class="status-bar" id="statusBar"></div>
+                    ${removeStatusBar ? '' : '<div class="time" id="currentTime"></div><div class="status-bar" id="statusBar"></div>'}
                     <div class="schedule">
                         <table>
                             <thead>
@@ -360,7 +362,9 @@
 
             const updateStatus = () => {
                 const now = new Date();
-                statusWindow.document.getElementById('currentTime').innerText = formatTime(now);
+                if (!removeStatusBar) {
+                    statusWindow.document.getElementById('currentTime').innerText = formatTime(now);
+                }
 
                 let statusType = '';
                 let remainingTime = '';
@@ -399,7 +403,9 @@
                     remainingTime = 'Thanks for playing!';
                 }
 
-                updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame);
+                if (!removeStatusBar) {
+                    updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame);
+                }
             };
 
             statusWindow.setInterval(updateStatus, 1000);
@@ -410,16 +416,13 @@
             const numGames = parseInt(document.getElementById('numGames').value);
             const gameDuration = parseInt(document.getElementById('gameDuration').value);
             const breakTime = parseInt(document.getElementById('breakTime').value);
-            const useCurrentTime = document.getElementById('useCurrentTime').checked;
+            const removeStatusBar = document.getElementById('removeStatusBar').checked;
 
+            const [hours, minutes] = openGymStart.split(':');
             let currentTime = new Date();
-
-            if (!useCurrentTime) {
-                const [hours, minutes] = openGymStart.split(':');
-                currentTime.setHours(parseInt(hours));
-                currentTime.setMinutes(parseInt(minutes));
-                currentTime.setSeconds(0);
-            }
+            currentTime.setHours(parseInt(hours));
+            currentTime.setMinutes(parseInt(minutes));
+            currentTime.setSeconds(0);
 
             const schedule = [];
 
@@ -432,7 +435,7 @@
                 currentTime = new Date(gameEnd.getTime() + breakTime * 60000);
             }
 
-            openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime);
+            openStatusWindow(schedule, gameDuration, breakTime, removeStatusBar);
         }
     </script>
 
