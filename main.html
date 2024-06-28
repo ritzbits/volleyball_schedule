@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volleyball Open Gym Schedule</title>
     <style>
-        @font-face {
-            font-family: 'Futura';
-            src: url('Futura.ttf') format('truetype');
-        }
         body {
-            font-family: 'Futura', sans-serif;
+            font-family: Helvetica, sans-serif;
             margin: 20px;
         }
         label, input {
@@ -33,19 +29,13 @@
         .status-bar {
             width: 100%;
             text-align: center;
-            padding: 26px; /* Increased by 30% */
-            font-size: 32px; /* Increased by 30% */
+            padding: 20px;
+            font-size: 24px;
             color: white;
         }
         .time {
             position: absolute;
-            top: 40px; /* Adjusted for date display */
-            right: 20px;
-            font-size: 18px;
-        }
-        .date {
-            position: absolute;
-            top: 15px;
+            top: 20px;
             right: 20px;
             font-size: 18px;
         }
@@ -75,10 +65,10 @@
                 font-size: 1.2em;
             }
             .status-bar {
-                padding: 52px; /* Increased by 30% */
-                font-size: 46.8px; /* Increased by 30% */
+                padding: 40px;
+                font-size: 36px;
             }
-            .time, .date {
+            .time {
                 font-size: 24px;
             }
             .schedule {
@@ -93,10 +83,10 @@
                 font-size: 1.5em;
             }
             .status-bar {
-                padding: 65px; /* Increased by 30% */
-                font-size: 62.4px; /* Increased by 30% */
+                padding: 50px;
+                font-size: 48px;
             }
-            .time, .date {
+            .time {
                 font-size: 32px;
             }
             .schedule {
@@ -160,15 +150,6 @@
             return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
         }
 
-        function formatDate(date) {
-            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const day = daysOfWeek[date.getDay()];
-            const month = months[date.getMonth()];
-            const dayOfMonth = date.getDate();
-            return `${day} ${month} ${dayOfMonth}`;
-        }
-
         function updateStatusWindow(statusWindow, statusType, remainingTime, highlightGame) {
             const statusBar = statusWindow.document.getElementById('statusBar');
             statusBar.innerText = `${statusType.text}\n${remainingTime}`;
@@ -191,7 +172,7 @@
         }
 
         function openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime) {
-            const statusWindow = window.open("", "StatusWindow", "width=400,height=800");
+            const statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
 
             statusWindow.document.write(`
                 <!DOCTYPE html>
@@ -201,12 +182,8 @@
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Game Status</title>
                     <style>
-                        @font-face {
-                            font-family: 'Futura';
-                            src: url('Futura.ttf') format('truetype');
-                        }
                         body {
-                            font-family: 'Futura', sans-serif;
+                            font-family: Helvetica, sans-serif;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
@@ -217,17 +194,11 @@
                         .status-bar {
                             width: 100%;
                             text-align: center;
-                            padding: 26px; /* Increased by 30% */
-                            font-size: 32px; /* Increased by 30% */
+                            padding: 20px;
+                            font-size: 24px;
                             color: white;
                         }
                         .time {
-                            position: absolute;
-                            top: 40px; /* Adjusted for date display */
-                            right: 20px;
-                            font-size: 18px;
-                        }
-                        .date {
                             position: absolute;
                             top: 20px;
                             right: 20px;
@@ -277,10 +248,10 @@
                                 font-size: 1.2em;
                             }
                             .status-bar {
-                                padding: 52px; /* Increased by 30% */
-                                font-size: 46.8px; /* Increased by 30% */
+                                padding: 40px;
+                                font-size: 36px;
                             }
-                            .time, .date {
+                            .time {
                                 font-size: 24px;
                             }
                             .schedule {
@@ -295,10 +266,10 @@
                                 font-size: 1.5em;
                             }
                             .status-bar {
-                                padding: 65px; /* Increased by 30% */
-                                font-size: 62.4px; /* Increased by 30% */
+                                padding: 50px;
+                                font-size: 48px;
                             }
-                            .time, .date {
+                            .time {
                                 font-size: 32px;
                             }
                             .schedule {
@@ -311,7 +282,6 @@
                     </style>
                 </head>
                 <body>
-                    <div class="date" id="currentDate"></div>
                     <div class="time" id="currentTime"></div>
                     <div class="status-bar" id="statusBar"></div>
                     <div class="schedule">
@@ -380,7 +350,6 @@
             const updateStatus = () => {
                 const now = new Date();
                 statusWindow.document.getElementById('currentTime').innerText = formatTime(now);
-                statusWindow.document.getElementById('currentDate').innerText = formatDate(now);
 
                 let statusType = '';
                 let remainingTime = '';
