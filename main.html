@@ -132,15 +132,20 @@
         };
 
         function formatTime(date) {
-            const hours = date.getHours();
+            let hours = date.getHours();
             const minutes = date.getMinutes();
             const seconds = date.getSeconds();
-            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
         }
 
         function formatTimeWithoutSeconds(date) {
-            const hours = date.getHours();
+            let hours = date.getHours();
             const minutes = date.getMinutes();
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
             return `${hours}:${String(minutes).padStart(2, '0')}`;
         }
 
@@ -172,7 +177,13 @@
         }
 
         function openStatusWindow(schedule, gameDuration, breakTime, useCurrentTime) {
-            const statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
+            let statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
+            if (!statusWindow || statusWindow.closed) {
+                statusWindow = window.open("", "StatusWindow", "width=800,height=1000");
+            } else {
+                statusWindow.location.reload();
+                statusWindow.focus();
+            }
 
             statusWindow.document.write(`
                 <!DOCTYPE html>
